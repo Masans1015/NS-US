@@ -1,0 +1,185 @@
+:root{
+  --ground:#F1F4F3; --surface:#FFFFFF; --surface-2:#E8EDEB; --surface-3:#DDE4E2;
+  --ink:#151F1D; --ink-2:#3F4F4C; --ink-3:#6B7B78;
+  --rule:#D2DAD8; --rule-strong:#B4BFBC;
+  --accent:#0E6B60; --accent-soft:#D6E6E3;
+  --warn:#9C5B15; --gate:#9B3446; --gate-soft:#F2DEE1;
+  --display:"Zen Old Mincho",'Hiragino Mincho ProN','Yu Mincho',serif;
+  --body:"Zen Kaku Gothic New",'Hiragino Sans','Yu Gothic',system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,'SFMono-Regular',monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1413; --surface:#161F1D; --surface-2:#1E2927; --surface-3:#26332F;
+    --ink:#E3EAE8; --ink-2:#A9B8B5; --ink-3:#7B8A87;
+    --rule:#2A3634; --rule-strong:#3C4A47;
+    --accent:#4FC0AE; --accent-soft:#1B302D;
+    --warn:#D79A3E; --gate:#E38294; --gate-soft:#331E22;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1413; --surface:#161F1D; --surface-2:#1E2927; --surface-3:#26332F;
+  --ink:#E3EAE8; --ink-2:#A9B8B5; --ink-3:#7B8A87;
+  --rule:#2A3634; --rule-strong:#3C4A47;
+  --accent:#4FC0AE; --accent-soft:#1B302D;
+  --warn:#D79A3E; --gate:#E38294; --gate-soft:#331E22;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--body); font-size:15.5px; line-height:1.85;
+  -webkit-font-smoothing:antialiased; font-feature-settings:"palt" 1;
+}
+
+.layout{display:grid; grid-template-columns:246px minmax(0,1fr); max-width:1220px; margin:0 auto; gap:0}
+
+/* ── 目次 ───────────────────────────── */
+.toc{
+  position:sticky; top:0; align-self:start; max-height:100vh; overflow-y:auto;
+  padding:34px 22px 48px 24px; border-right:1px solid var(--rule);
+}
+.tocttl{font-family:var(--display); font-weight:700; font-size:19px; margin:0}
+.tocsub{font-family:var(--mono); font-size:10.5px; color:var(--ink-3); margin:4px 0 22px; letter-spacing:.05em}
+.navgroup{margin-bottom:18px}
+.navdoc{
+  display:block; font-size:13px; font-weight:700; color:var(--ink);
+  text-decoration:none; padding:3px 0; border-bottom:1px solid var(--rule); margin-bottom:5px;
+  overflow-wrap:anywhere;
+}
+.navsec{
+  display:block; font-size:12px; color:var(--ink-3); text-decoration:none;
+  padding:2.5px 0 2.5px 10px; border-left:2px solid transparent; line-height:1.45;
+  overflow-wrap:anywhere;
+}
+.navdoc:hover,.navsec:hover{color:var(--accent)}
+.navsec:hover{border-left-color:var(--accent)}
+.navdoc:focus-visible,.navsec:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ── 本文 ───────────────────────────── */
+.content{padding:clamp(28px,4vw,56px) clamp(20px,4vw,56px) 110px; min-width:0}
+
+.masthead{border-bottom:2px solid var(--ink); padding-bottom:30px; margin-bottom:14px}
+.eyebrow{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 12px;
+}
+.doctitle{font-family:var(--display); font-weight:700; font-size:clamp(32px,5vw,44px); margin:0; line-height:1.3}
+.lede{font-size:16px; color:var(--ink-2); margin:16px 0 0; max-width:64ch}
+.metaline{
+  display:flex; flex-wrap:wrap; gap:6px 20px; margin-top:20px;
+  font-family:var(--mono); font-size:11.5px; color:var(--ink-3);
+}
+
+.doc{padding-top:8px}
+.doc + .doc{margin-top:64px; border-top:1px solid var(--rule-strong); padding-top:44px}
+.srcpath{
+  font-family:var(--mono); font-size:10.5px; color:var(--ink-3);
+  letter-spacing:.04em; margin:0 0 6px;
+}
+
+/* 見出しは md の階層(.lv1/.lv2/.lv3)で見た目を決める。
+   タグは h2-h4 で、h1 はページ表題だけが持つ。 */
+.lv1,.lv2,.lv3{font-family:var(--display); text-wrap:balance; line-height:1.45; scroll-margin-top:20px}
+.lv1{font-size:clamp(24px,3.4vw,31px); font-weight:700; margin:10px 0 20px}
+.lv2{
+  font-size:20px; font-weight:700; margin:52px 0 16px;
+  padding-bottom:7px; border-bottom:1px solid var(--rule);
+}
+.lv3{font-family:var(--body); font-size:15.5px; font-weight:700; margin:34px 0 10px; color:var(--ink)}
+
+p{margin:0 0 14px; max-width:74ch}
+strong{font-weight:700}
+hr{border:none; border-top:1px solid var(--rule); margin:38px 0}
+
+code{
+  font-family:var(--mono); font-size:.855em; background:var(--surface-2);
+  padding:.1em .36em; border-radius:3px; word-break:break-word;
+}
+pre{
+  background:var(--surface-2); border:1px solid var(--rule); border-radius:4px;
+  padding:15px 17px; overflow-x:auto; margin:0 0 18px; position:relative;
+}
+pre code{background:none; padding:0; font-size:12.5px; line-height:1.75; white-space:pre}
+pre[data-lang]:not([data-lang=""])::before{
+  content:attr(data-lang); position:absolute; top:0; right:0;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); background:var(--surface-3); padding:2px 8px; border-radius:0 3px 0 4px;
+}
+
+ul,ol{margin:0 0 16px; padding-left:0; list-style:none; max-width:74ch}
+ol{counter-reset:n}
+li{position:relative; padding-left:22px; margin-bottom:8px; line-height:1.75}
+ul li::before{
+  content:""; position:absolute; left:2px; top:.72em;
+  width:7px; height:1.5px; background:var(--accent);
+}
+ol li{counter-increment:n}
+ol li::before{
+  content:counter(n); position:absolute; left:0; top:0;
+  font-family:var(--mono); font-size:11.5px; font-weight:600; color:var(--accent); line-height:2.1;
+}
+
+blockquote{
+  margin:0 0 20px; padding:15px 18px; max-width:74ch;
+  background:var(--surface); border:1px solid var(--rule);
+  border-left:3px solid var(--gate); border-radius:0 4px 4px 0;
+}
+blockquote p{margin:0; font-size:14.5px; color:var(--ink-2)}
+blockquote p + p{margin-top:9px}
+
+.scroller{
+  overflow-x:auto; margin:0 0 22px;
+  border:1px solid var(--rule); border-radius:4px; background:var(--surface);
+}
+table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:460px}
+th,td{text-align:left; padding:9px 13px; border-bottom:1px solid var(--rule); vertical-align:top; line-height:1.65}
+thead th{
+  font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); background:var(--surface-2);
+  border-bottom:1px solid var(--rule-strong); white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:none}
+td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+td code{font-size:.9em}
+
+footer{
+  margin-top:76px; padding-top:22px; border-top:1px solid var(--rule);
+  font-family:var(--mono); font-size:11px; color:var(--ink-3); line-height:1.9;
+}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  /* 節見出しまで出すと目次だけで1画面を超えるので、文書単位の6リンクに絞る */
+  .toc{
+    position:static; max-height:none; border-right:none;
+    border-bottom:1px solid var(--rule-strong);
+    padding:16px 20px 14px;
+    display:flex; flex-wrap:wrap; gap:7px; align-items:center;
+  }
+  .tocttl{display:none}
+  .tocsub{
+    display:block; width:100%; margin:0 0 4px;
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+  }
+  .tocsub::before{content:"目次 ／ "}
+  .navgroup{margin:0; display:contents}
+  .navdoc{
+    display:inline-block; margin:0; padding:4px 11px; font-size:12px;
+    border:1px solid var(--rule-strong); border-radius:99px;
+    background:var(--surface); white-space:nowrap;
+  }
+  .navsec{display:none}
+  body{font-size:15px}
+  p,ul,ol,blockquote{max-width:none}
+  .content{padding-top:26px}
+}
+@media print{
+  .toc{display:none}
+  .layout{grid-template-columns:1fr; max-width:none}
+  body{background:#fff; color:#000; font-size:10pt}
+  .scroller,pre{break-inside:avoid}
+  .lv2,.lv3{break-after:avoid}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

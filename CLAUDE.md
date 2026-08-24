@@ -53,6 +53,17 @@ scripts/    検査・ビルド・採点・集計
 `lib/` は core でも org でも render でもない**インフラ層**（ADR-011）。
 配布するのは `dist/` の単体HTML。`scripts/build.sh` がマーカーを展開して作る。
 
+### 計画書のHTML版
+
+`docs/plan.html` は `docs/*.md` から生成した単一HTMLの計画書（実行計画・決定記録・実測手順・実装仕様3本を1ファイルに束ねたもの）。
+
+```bash
+node scripts/build-docs.mjs   # docs/*.md → docs/plan.html + dist/plan.artifact.html
+```
+
+**Markdown が正本。`docs/plan.html` を直接編集しない**（次回の生成で失われる）。
+`docs/*.md` を直したら同じコミットで再生成すること。
+
 ---
 
 ## 実装の制約
