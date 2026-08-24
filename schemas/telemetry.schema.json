@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nouscale.internal/schemas/telemetry.schema.json",
+  "title": "telemetry-record",
+  "description": "アプリ1回の利用につき1レコード。後から遡って取得できない唯一のデータであり、外販時の効果根拠はこれしかない。全アプリの共通DoDとして、この記録なしにP5リリースへ進めない。ブラウザ内で生成しJSON Lines形式でエクスポートする（TierAは保存しないため、都度ダウンロード）。",
+  "type": "object",
+  "required": ["schema_version", "record_id", "app_id", "recorded_at", "task", "actual"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "record_id": { "type": "string", "description": "UUID。重複排除に使う" },
+    "app_id": { "type": "string" },
+    "app_version": { "type": "string" },
+    "org_id": { "type": "string" },
+    "recorded_at": { "type": "string", "format": "date-time" },
+    "user_ref": {
+      "type": "string",
+      "description": "個人を特定しない参照値（ハッシュまたはロール名）。実名を入れないこと"
+    },
+
+    "task": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "description": "例: 提案書骨子作成 / RFP読解 / 工数見積" },
+        "scope_size": { "type": "string", "description": "例: 20ページ / 3テーマ / 契約1件" },
+        "complexity": { "type": "string", "enum": ["low", "medium", "high"] },
+        "first_time_for_user": { "type": "boolean", "description": "習熟効果と支援効果を分離するために必要" }
+      }
+    },
+
+    "baseline": {
+      "type": "object",
+      "description": "AIなしでやった場合の所要時間。measured が最も強く、assumption は外販根拠に使えない。",
+      "additionalProperties": false,
+      "properties": {
+        "minutes": { "type": "number" },
+        "method": {
+          "type": "string",
+          "enum": ["measured", "self_report", "historical_average", "assumption"]
+        },
+        "source_note": { "type": "string" }
+      }
+    },
+
+    "actual": {
+      "type": "object",
+      "required": ["minutes"],
+      "additionalProperties": false,
+      "properties": {
+        "minutes": { "type": "number", "description": "アプリ利用開始から成果物確定までの実時間。待ち時間も含める" },
+        "interaction_rounds": { "type": "integer", "description": "やり直し回数。ここが多いアプリは使われなくなる" },
+        "manual_fix_minutes": { "type": "number", "description": "出力後の手直し時間。これを計上しないと削減率が過大になる" }
+      }
+    },
+
+    "quality": {
+      "type": "object",
+      "description": "時間短縮だけでは外販根拠にならない。品質が落ちていないことの記録が要る。",
+      "additionalProperties": false,
+      "properties": {
+        "self_score": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "reviewer_score": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "accepted_without_rework": { "type": "boolean" },
+        "downstream_outcome": {
+          "type": "string",
+          "description": "例: 提案採択 / 見積乖離±10%以内 / 差し戻しなし。取れるときだけ入れる"
+        }
+      }
+    },
+
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_data_level_used": { "type": "integer", "description": "投入した最も機微なデータ区分の level" },
+        "human_approved": { "type": "boolean" },
+        "incident": { "type": ["string", "null"], "description": "ヒヤリハットを含む。null許容だが空文字は不可" }
+      }
+    },
+
+    "consent": {
+      "type": "object",
+      "description": "外販時に事例として使えるかの区別。あとから同意は取り直せないので初回から記録する。",
+      "additionalProperties": false,
+      "properties": {
+        "internal_analysis": { "type": "boolean", "default": true },
+        "external_citation_anonymized": { "type": "boolean", "default": false },
+        "external_citation_named": { "type": "boolean", "default": false }
+      }
+    },
+
+    "free_note": {
+      "type": "string",
+      "description": "使わなかった理由・不満。P6で評価セットに昇格させる元ネタ。ここが空のログばかりなら運用が形骸化している"
+    }
+  }
+}

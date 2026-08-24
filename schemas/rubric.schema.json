@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nouscale.internal/schemas/rubric.schema.json",
+  "title": "rubric",
+  "description": "アプリごとの評価基準。P3プロトタイプ検証のGo/No-Go判定に使う。会社固有の基準を混ぜないこと（混ぜると外販時に基準ごと作り直しになる）。会社固有の合否条件は org-profile 側に置き、rubric は criteria の重みだけを持つ。",
+  "type": "object",
+  "required": ["schema_version", "app_id", "criteria", "go_threshold"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "app_id": { "type": "string", "description": "例: A15" },
+    "rubric_version": { "type": "string" },
+    "updated_at": { "type": "string", "format": "date" },
+
+    "criteria": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "weight", "levels"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "definition": { "type": "string", "description": "採点者が迷わない粒度で書く。ここが曖昧だと一貫性テストが落ちる" },
+          "weight": { "type": "number", "description": "合計が1.0になること" },
+          "auto_checkable": {
+            "type": "boolean",
+            "description": "true ならJS/正規表現で機械判定できる。LLM-as-judgeを使わずに済む項目は必ずtrueにする"
+          },
+          "check_method": {
+            "type": "string",
+            "enum": ["deterministic", "llm_judge", "human"],
+            "description": "deterministic を最優先。llm_judge は校正（校正セット）とセットで使う"
+          },
+          "levels": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "required": ["score", "descriptor"],
+              "additionalProperties": false,
+              "properties": {
+                "score": { "type": "integer", "description": "0-4 を推奨。5段は判定がぶれやすい" },
+                "descriptor": { "type": "string" },
+                "example": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "go_threshold": {
+      "type": "object",
+      "description": "これを満たさないアプリはP4パイロットへ進めない。",
+      "required": ["min_weighted_score"],
+      "additionalProperties": false,
+      "properties": {
+        "min_weighted_score": { "type": "number" },
+        "min_per_criterion": { "type": "integer", "description": "1項目でもこれを下回れば不合格（足切り）" },
+        "must_pass_criteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "満点でなくとも必ず通過が必要な criteria.id。安全性・来歴表示などをここに入れる"
+        }
+      }
+    },
+
+    "consistency_test": {
+      "type": "object",
+      "description": "同一入力を複数回採点し、ばらつきを見る。判定の信頼性の担保。",
+      "additionalProperties": false,
+      "properties": {
+        "runs": { "type": "integer", "default": 3 },
+        "max_score_stddev": { "type": "number", "description": "これを超えたら criteria.definition を書き直す" }
+      }
+    },
+
+    "portability_check": {
+      "type": "object",
+      "description": "G5 可搬性テスト。外販判断の前提。",
+      "additionalProperties": false,
+      "properties": {
+        "alternate_org_profile": { "type": "string", "description": "差し替えて試す別org-profileのパス" },
+        "alternate_model": { "type": "string", "description": "代替LLMでの動作確認" },
+        "max_score_drop": { "type": "number", "description": "差し替え後のスコア低下許容幅。これを超えたら core に会社固有が漏れている" }
+      }
+    }
+  }
+}

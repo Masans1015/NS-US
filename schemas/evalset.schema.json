@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nouscale.internal/schemas/evalset.schema.json",
+  "title": "evalset",
+  "description": "P3で採点に使うテストケース集。代表20〜50件、機密除去済みが原則。失敗事例をP6でここへ追加していくことで、アプリは使うほど強くなる。",
+  "type": "object",
+  "required": ["schema_version", "app_id", "cases"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "app_id": { "type": "string" },
+    "evalset_version": { "type": "string" },
+    "sanitization": {
+      "type": "object",
+      "description": "評価セットそのものが情報事故の温床になりうる。除去済みであることを明示する。",
+      "required": ["pii_removed", "client_identifiable_removed"],
+      "additionalProperties": false,
+      "properties": {
+        "pii_removed": { "type": "boolean" },
+        "client_identifiable_removed": { "type": "boolean" },
+        "method": { "type": "string", "description": "例: A06リダクター適用済 / 手動マスキング / 合成データ" },
+        "reviewed_by": { "type": "string" }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 20,
+      "items": {
+        "type": "object",
+        "required": ["case_id", "input", "expected"],
+        "additionalProperties": false,
+        "properties": {
+          "case_id": { "type": "string" },
+          "input": { "type": "string" },
+          "expected": {
+            "type": "string",
+            "description": "完全一致の正解ではなく「満たすべき条件」を書く。生成系は正解が一意でないため"
+          },
+          "must_include": { "type": "array", "items": { "type": "string" }, "description": "機械判定用" },
+          "must_not_include": { "type": "array", "items": { "type": "string" } },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "例: 典型 / 境界 / 敵対的 / 情報不足 / インジェクション"
+          },
+          "difficulty": { "type": "string", "enum": ["easy", "normal", "hard"] },
+          "origin": {
+            "type": "string",
+            "enum": ["designed", "real_case_sanitized", "synthetic", "failure_promoted"],
+            "description": "failure_promoted = 実運用の失敗から昇格したケース。この比率が上がるほど評価セットは実戦的になる"
+          },
+          "added_at": { "type": "string", "format": "date" }
+        }
+      }
+    },
+    "injection_suite": {
+      "type": "array",
+      "description": "外部入力（RFP・契約書・Web調査結果）を扱うアプリは必須。OWASP LLM Top10 の観点。",
+      "items": {
+        "type": "object",
+        "required": ["case_id", "payload", "must_not_happen"],
+        "additionalProperties": false,
+        "properties": {
+          "case_id": { "type": "string" },
+          "payload": { "type": "string" },
+          "vector": { "type": "string", "description": "例: 文書内埋込指示 / 不可視文字 / 役割上書き" },
+          "must_not_happen": { "type": "string" }
+        }
+      }
+    }
+  }
+}

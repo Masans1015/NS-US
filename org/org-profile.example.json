@@ -1,0 +1,234 @@
+{
+  "schema_version": "1.0",
+  "org": {
+    "id": "rcg",
+    "name": "株式会社ライズ・コンサルティング・グループ",
+    "industry": "コンサルティング",
+    "employee_count": 430,
+    "locale": "ja-JP",
+    "profile_owner": "（記入）",
+    "updated_at": "2026-09-01"
+  },
+
+  "policy": {
+    "data_classification": [
+      {
+        "level": 1,
+        "label": "極秘",
+        "definition": "漏洩により事業継続・上場維持に重大影響を及ぼすもの",
+        "examples": ["未公表のM&A情報", "未公表の決算数値", "重大インシデント情報"],
+        "ai_input": "prohibited",
+        "conditions": [],
+        "allowed_tools": []
+      },
+      {
+        "level": 2,
+        "label": "顧客機密",
+        "definition": "顧客から預託を受けた情報、NDA対象",
+        "examples": ["顧客の内部資料", "顧客固有の数値", "顧客名を含む議事録"],
+        "ai_input": "conditional",
+        "conditions": [
+          "顧客名・固有名詞を匿名化したうえで投入",
+          "顧客との契約でAI利用が禁止されていないことを確認",
+          "学習利用オフが契約上担保されたツールのみ"
+        ],
+        "allowed_tools": []
+      },
+      {
+        "level": 3,
+        "label": "社内限",
+        "definition": "社外への開示を想定していない社内情報",
+        "examples": ["社内規程", "社内提案テンプレ", "自社の工数実績"],
+        "ai_input": "conditional",
+        "conditions": ["承認済みツールのみ"],
+        "allowed_tools": []
+      },
+      {
+        "level": 4,
+        "label": "公開可",
+        "definition": "公開済み・公開予定の情報",
+        "examples": ["プレスリリース", "公開資料", "一般的な業界情報"],
+        "ai_input": "allowed",
+        "conditions": [],
+        "allowed_tools": []
+      }
+    ],
+
+    "prohibited_inputs": [
+      {
+        "label": "個人情報（氏名と他の識別子の組合せ）",
+        "detect_patterns": ["[0-9]{3}-[0-9]{4}-[0-9]{4}", "\\\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}\\\\b"],
+        "rationale": "個人情報取扱規程による",
+        "source_document": "（社内規程名・条番号を記入）"
+      },
+      {
+        "label": "認証情報（APIキー・パスワード・トークン）",
+        "detect_patterns": ["sk-[A-Za-z0-9]{20,}", "(?i)password\\\\s*[:=]"],
+        "rationale": "認証情報の外部送信は事故に直結",
+        "source_document": "（記入）"
+      }
+    ],
+
+    "approved_tools": [
+      {
+        "name": "Claude (Team)",
+        "status": "approved",
+        "max_data_level": 3,
+        "approved_uses": ["文書作成", "長文読解", "コード生成"],
+        "restrictions": ["顧客機密は匿名化後のみ"],
+        "training_optout": true,
+        "data_region": "（確認して記入）"
+      },
+      {
+        "name": "（他の承認ツールを追記）",
+        "status": "under_review",
+        "max_data_level": 4,
+        "approved_uses": [],
+        "restrictions": [],
+        "training_optout": false,
+        "data_region": ""
+      }
+    ],
+
+    "human_approval_required": [
+      "顧客への外部送信を伴う成果物の確定",
+      "契約条件の判断・回答",
+      "不可逆な操作（削除・本番反映・コミット）",
+      "採用・評価に関わる判断"
+    ],
+
+    "disclosure_rules": {
+      "internal_required": false,
+      "external_required": true,
+      "statement_template": "本資料の作成にあたり生成AIを補助的に使用し、内容は当社が確認しています。"
+    }
+  },
+
+  "delivery": {
+    "estimation_baseline": [
+      {
+        "task_type": "提案書骨子作成",
+        "unit": "1案件",
+        "p50_hours": 0,
+        "p80_hours": 0,
+        "source": "assumption",
+        "sample_n": 0,
+        "updated_at": "2026-09-01"
+      },
+      {
+        "task_type": "RFP読解・要件抽出",
+        "unit": "1件（50ページ想定）",
+        "p50_hours": 0,
+        "p80_hours": 0,
+        "source": "assumption",
+        "sample_n": 0,
+        "updated_at": "2026-09-01"
+      },
+      {
+        "task_type": "As-Is業務プロセス整理",
+        "unit": "1業務領域",
+        "p50_hours": 0,
+        "p80_hours": 0,
+        "source": "assumption",
+        "sample_n": 0,
+        "updated_at": "2026-09-01"
+      }
+    ],
+
+    "role_capacity": [
+      { "role": "シニアパートナー", "daily_capacity_h": 0, "loaded_cost_per_day": null },
+      { "role": "マネージャー", "daily_capacity_h": 0, "loaded_cost_per_day": null },
+      { "role": "コンサルタント", "daily_capacity_h": 0, "loaded_cost_per_day": null }
+    ],
+
+    "buffer_policy": {
+      "default_pct": 15,
+      "high_uncertainty_pct": 30,
+      "rationale": "検証系タスクは前処理・例外処理で見積が過少になりやすい"
+    },
+
+    "wbs_templates": [
+      {
+        "template_id": "poc_standard",
+        "name": "PoC標準（3〜5週）",
+        "phases": [
+          { "phase": "要件・KPI定義", "share_pct": 15, "tasks": ["対象業務の選定", "現状値の実測", "Go基準の設定"] },
+          { "phase": "設計", "share_pct": 20, "tasks": ["処理フロー設計", "評価設計", "人間承認点の設計"] },
+          { "phase": "試作・検証", "share_pct": 40, "tasks": ["最小構成の実装", "評価セットで採点", "改善反復"] },
+          { "phase": "効果測定", "share_pct": 15, "tasks": ["Before/After比較", "コスト実測"] },
+          { "phase": "報告・引渡し", "share_pct": 10, "tasks": ["報告書作成", "手順書整備"] }
+        ]
+      }
+    ]
+  },
+
+  "document": {
+    "proposal_structure": [
+      { "section": "エグゼクティブサマリー", "purpose": "結論と示唆を先に置く", "required": true, "typical_slides": 1 },
+      { "section": "課題認識", "purpose": "顧客の言葉で現状を再定義する", "required": true, "typical_slides": 3 },
+      { "section": "打ち手", "purpose": "課題との対応を1対1で示す", "required": true, "typical_slides": 5 },
+      { "section": "進め方・体制", "purpose": "実行可能性を示す", "required": true, "typical_slides": 3 },
+      { "section": "費用", "purpose": "根拠つきで提示する", "required": true, "typical_slides": 1 }
+    ],
+
+    "self_check_items": [
+      "各スライドのメッセージが体言止めでなく主張になっているか",
+      "課題と打ち手が1対1で対応しているか",
+      "数値に出典が付いているか",
+      "顧客固有の固有名詞が正確か"
+    ],
+
+    "tone": {
+      "register": "です・ます",
+      "banned_expressions": ["革新的な", "シームレスに", "圧倒的な"],
+      "preferred_terms": [
+        { "avoid": "ソリューション", "use": "打ち手" },
+        { "avoid": "アジェンダ", "use": "論点" }
+      ]
+    },
+
+    "format_profile": "rcg"
+  },
+
+  "legal": {
+    "standard_clauses": [
+      {
+        "clause_id": "C-01",
+        "topic": "責任制限",
+        "our_position": "（記入）",
+        "acceptable_range": "（記入）",
+        "red_flag": "無制限責任・懲罰的損害賠償",
+        "escalate_to": "法務"
+      },
+      {
+        "clause_id": "C-02",
+        "topic": "知的財産の帰属",
+        "our_position": "（記入）",
+        "acceptable_range": "（記入）",
+        "red_flag": "汎用ノウハウまで顧客帰属とする条項",
+        "escalate_to": "法務"
+      },
+      {
+        "clause_id": "C-03",
+        "topic": "生成AI利用の可否",
+        "our_position": "（記入）",
+        "acceptable_range": "（記入）",
+        "red_flag": "AI利用の全面禁止・事前個別承認の義務づけ",
+        "escalate_to": "法務"
+      }
+    ],
+    "counterparty_types": ["顧客", "再委託先", "提携先"]
+  },
+
+  "brand": {
+    "fonts": ["游ゴシック"],
+    "colors": {
+      "primary": "#1F3864",
+      "text": "#272727",
+      "table_header": "#404040",
+      "rule": "#8A8886"
+    },
+    "deck_skill": "rcg-deck-builder",
+    "logo_path": ""
+  }
+}

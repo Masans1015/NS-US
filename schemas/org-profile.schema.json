@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nouscale.internal/schemas/org-profile.schema.json",
+  "title": "org-profile",
+  "description": "会社固有の設定をすべて格納する唯一のファイル。core（判断ロジック）には会社名・自社ルール・自社実績を一切書かない。外販時はこのファイルを顧客企業のものに差し替えるだけで動作すること（=可搬性テスト G5 の合格条件）。",
+  "type": "object",
+  "required": ["schema_version", "org", "policy"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "org": {
+      "type": "object",
+      "required": ["id", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "description": "英数小文字。ファイル名・ログのorg_idと一致させる" },
+        "name": { "type": "string" },
+        "industry": { "type": "string" },
+        "employee_count": { "type": "integer" },
+        "locale": { "type": "string", "default": "ja-JP" },
+        "profile_owner": { "type": "string", "description": "このファイルの更新責任者" },
+        "updated_at": { "type": "string", "format": "date" }
+      }
+    },
+
+    "policy": {
+      "type": "object",
+      "description": "A03 データ投入可否ゲート / A04 AI利用ポリシーチェッカー が参照する。ガバナンス系アプリの外販性はこのブロックの完成度で決まる。",
+      "required": ["data_classification"],
+      "additionalProperties": false,
+      "properties": {
+        "data_classification": {
+          "type": "array",
+          "description": "自社のデータ区分。段数・呼称は企業ごとに異なるため配列で持つ（3段/4段/5段いずれも可）。",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["level", "label", "ai_input"],
+            "additionalProperties": false,
+            "properties": {
+              "level": { "type": "integer", "description": "1が最も機微。昇順で公開側へ" },
+              "label": { "type": "string", "description": "例: 極秘 / 社外秘 / 社内限 / 公開可" },
+              "definition": { "type": "string" },
+              "examples": { "type": "array", "items": { "type": "string" } },
+              "ai_input": {
+                "type": "string",
+                "enum": ["prohibited", "conditional", "allowed"],
+                "description": "生成AIへの投入可否"
+              },
+              "conditions": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "ai_input=conditional のときの条件（匿名化必須・閉域のみ 等）"
+              },
+              "allowed_tools": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "この区分で使用を許可するツール名。approved_tools[].name と一致させる"
+              }
+            }
+          }
+        },
+        "prohibited_inputs": {
+          "type": "array",
+          "description": "区分によらず絶対に投入禁止のもの。検出用のキーワード/正規表現も持てる。",
+          "items": {
+            "type": "object",
+            "required": ["label"],
+            "additionalProperties": false,
+            "properties": {
+              "label": { "type": "string" },
+              "detect_patterns": { "type": "array", "items": { "type": "string" }, "description": "正規表現。ブラウザ内で事前検出に使う" },
+              "rationale": { "type": "string" },
+              "source_document": { "type": "string", "description": "根拠となる社内規程名・条番号" }
+            }
+          }
+        },
+        "approved_tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "status"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "status": { "type": "string", "enum": ["approved", "conditional", "prohibited", "under_review"] },
+              "max_data_level": { "type": "integer", "description": "投入を許すデータ区分の最も機微な level" },
+              "approved_uses": { "type": "array", "items": { "type": "string" } },
+              "restrictions": { "type": "array", "items": { "type": "string" } },
+              "training_optout": { "type": "boolean", "description": "学習利用オフの契約になっているか" },
+              "data_region": { "type": "string" }
+            }
+          }
+        },
+        "human_approval_required": {
+          "type": "array",
+          "description": "HITL必須の操作。A04がチェックする。",
+          "items": { "type": "string" }
+        },
+        "disclosure_rules": {
+          "type": "object",
+          "description": "AI生成物の来歴表示ルール",
+          "additionalProperties": false,
+          "properties": {
+            "internal_required": { "type": "boolean" },
+            "external_required": { "type": "boolean" },
+            "statement_template": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "delivery": {
+      "type": "object",
+      "description": "A15 工数見積キット / A11 RFPアナライザー が参照。自社の実績値。ここが空でも core は汎用レンジで動くこと（=外販時の初期状態）。",
+      "additionalProperties": false,
+      "properties": {
+        "estimation_baseline": {
+          "type": "array",
+          "description": "作業種別ごとの実績工数。n が小さいうちは source=assumption と明記する。",
+          "items": {
+            "type": "object",
+            "required": ["task_type", "unit", "p50_hours"],
+            "additionalProperties": false,
+            "properties": {
+              "task_type": { "type": "string" },
+              "unit": { "type": "string", "description": "例: 1本 / 1テーマ / 1社 / 10ページ" },
+              "p50_hours": { "type": "number" },
+              "p80_hours": { "type": "number", "description": "見積レンジ上限に使う" },
+              "source": { "type": "string", "enum": ["measured", "self_report", "assumption", "industry_standard"] },
+              "sample_n": { "type": "integer" },
+              "updated_at": { "type": "string", "format": "date" }
+            }
+          }
+        },
+        "role_capacity": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["role", "daily_capacity_h"],
+            "additionalProperties": false,
+            "properties": {
+              "role": { "type": "string" },
+              "daily_capacity_h": { "type": "number" },
+              "loaded_cost_per_day": { "type": ["number", "null"], "description": "外販版では原則 null。社内版のみ入れる" }
+            }
+          }
+        },
+        "buffer_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "default_pct": { "type": "number" },
+            "high_uncertainty_pct": { "type": "number" },
+            "rationale": { "type": "string" }
+          }
+        },
+        "wbs_templates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["template_id", "name", "phases"],
+            "additionalProperties": false,
+            "properties": {
+              "template_id": { "type": "string" },
+              "name": { "type": "string" },
+              "phases": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["phase", "tasks"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "phase": { "type": "string" },
+                    "share_pct": { "type": "number", "description": "全体工数に占める割合。絶対値でなく比率で持つと横展開できる" },
+                    "tasks": { "type": "array", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "document": {
+      "type": "object",
+      "description": "A09 提案書ジェネレーター / A13 プロセス可視化 が参照。出力体裁と判断ロジックを分離するための層。",
+      "additionalProperties": false,
+      "properties": {
+        "proposal_structure": {
+          "type": "array",
+          "description": "自社の提案書の章立て。core は「論点→ストーリー」までを担い、章割りはここに従う。",
+          "items": {
+            "type": "object",
+            "required": ["section"],
+            "additionalProperties": false,
+            "properties": {
+              "section": { "type": "string" },
+              "purpose": { "type": "string" },
+              "required": { "type": "boolean", "default": true },
+              "typical_slides": { "type": "integer" }
+            }
+          }
+        },
+        "self_check_items": {
+          "type": "array",
+          "description": "自己検品項目。汎用項目は core 側、自社固有の禁止事項のみここに置く。",
+          "items": { "type": "string" }
+        },
+        "tone": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "register": { "type": "string", "description": "例: です・ます / である" },
+            "banned_expressions": { "type": "array", "items": { "type": "string" } },
+            "preferred_terms": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": { "avoid": { "type": "string" }, "use": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "format_profile": {
+          "type": "string",
+          "description": "出力体裁の識別子。'generic' / 'rcg' 等。core はこの値を見ずに構造化データを返し、レンダラ側が解釈する。",
+          "default": "generic"
+        }
+      }
+    },
+
+    "legal": {
+      "type": "object",
+      "description": "A18 契約書・NDA一次スクリーニング が参照。閉域・社内先行が前提。",
+      "additionalProperties": false,
+      "properties": {
+        "standard_clauses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["clause_id", "topic", "our_position"],
+            "additionalProperties": false,
+            "properties": {
+              "clause_id": { "type": "string" },
+              "topic": { "type": "string", "description": "例: 責任制限 / 知的財産帰属 / 秘密保持期間 / 準拠法" },
+              "our_position": { "type": "string", "description": "自社の標準的な立場" },
+              "acceptable_range": { "type": "string", "description": "許容できる範囲" },
+              "red_flag": { "type": "string", "description": "これが出たら必ずエスカレーション" },
+              "escalate_to": { "type": "string" }
+            }
+          }
+        },
+        "counterparty_types": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "例: 顧客 / 再委託先 / 提携先。立場によって基準が変わる場合に使う"
+        }
+      }
+    },
+
+    "brand": {
+      "type": "object",
+      "description": "レンダラ層のみが参照。core は一切参照しないこと。",
+      "additionalProperties": false,
+      "properties": {
+        "fonts": { "type": "array", "items": { "type": "string" } },
+        "colors": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "deck_skill": { "type": "string", "description": "生成に使う既存スキル名。例: rcg-deck-builder" },
+        "logo_path": { "type": "string" }
+      }
+    }
+  }
+}
