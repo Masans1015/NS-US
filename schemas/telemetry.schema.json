@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nouscale.internal/schemas/telemetry.schema.json",
   "title": "telemetry-record",
-  "description": "アプリ1回の利用につき1レコード。後から遡って取得できない唯一のデータであり、外販時の効果根拠はこれしかない。全アプリの共通DoDとして、この記録なしにP5リリースへ進めない。ブラウザ内で生成しJSON Lines形式でエクスポートする（TierAは保存しないため、都度ダウンロード）。",
+  "description": "アプリ1回の利用につき1レコード（未利用の機会も task.used=false で1レコード）。後から遡って取得できない唯一のデータであり、外販時の効果根拠はこれしかない。全アプリの共通DoDとして、この記録なしにP5リリースへ進めない。ブラウザ内で生成しJSON Lines形式でエクスポートする（TierAは保存しないため、都度ダウンロード）。",
   "type": "object",
   "required": ["schema_version", "record_id", "app_id", "recorded_at", "task", "actual"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "type": "string", "const": "1.0" },
+    "schema_version": { "type": "string", "const": "1.1" },
     "record_id": { "type": "string", "description": "UUID。重複排除に使う" },
     "app_id": { "type": "string" },
     "app_version": { "type": "string" },
@@ -24,6 +24,11 @@
       "additionalProperties": false,
       "properties": {
         "type": { "type": "string", "description": "例: 提案書骨子作成 / RFP読解 / 工数見積" },
+        "used": {
+          "type": "boolean",
+          "default": true,
+          "description": "false = 対象タスクが発生したがアプリを使わなかった機会。G1は「機会のうち何割で使ったか」で判定するため、使わなかった機会を記録しないと分母が消える。false のときは free_note に理由を必ず書き、actual.minutes は 0、baseline と quality は入れない。"
+        },
         "scope_size": { "type": "string", "description": "例: 20ページ / 3テーマ / 契約1件" },
         "complexity": { "type": "string", "enum": ["low", "medium", "high"] },
         "first_time_for_user": { "type": "boolean", "description": "習熟効果と支援効果を分離するために必要" }

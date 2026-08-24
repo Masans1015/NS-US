@@ -40,13 +40,18 @@ NouScale／1名＋AI／2026-09-01 〜 2026-11-29（13週・稼働 **174h**）。
 core/       {app_id}.system.md, {app_id}.rubric.json
 org/        org-profile.{org_id}.json
 render/     generic/, rcg/
+lib/        共通シェル（telemetry/org-profile/llm/ui）← 判断ロジックを置かない
 eval/       {app_id}.evalset.json
-apps/       {app_id}/index.html  ← 単体HTML。ブラウザ内完結
+apps/       {app_id}/index.html  ← <!-- @inline lib/xxx.js --> マーカーを持つソース
+dist/       {app_id}.html        ← 配布物。単体HTML（生成物・gitignore）
 telemetry/  {app_id}.{YYYY-MM}.jsonl
 schemas/    このプロジェクトの定義（変更時は必ず schema_version を上げる）
-docs/       要件定義・ゲート定義
-scripts/    検査スクリプト
+docs/       要件定義・ゲート定義／specs/ に実装仕様
+scripts/    検査・ビルド・採点・集計
 ```
+
+`lib/` は core でも org でも render でもない**インフラ層**（ADR-011）。
+配布するのは `dist/` の単体HTML。`scripts/build.sh` がマーカーを展開して作る。
 
 ---
 
@@ -81,6 +86,7 @@ scripts/    検査スクリプト
 6. 外部文書を扱うアプリは injection_suite を実施済み
 7. 可搬性テスト（G5）合格 ※A09は免除
 8. 起動時に core と org-profile の `schema_version` を検証し、不一致なら停止する
+9. rubric の重みの合計が 1.0（正規化済みの値は ADR-014 の表）
 
 **telemetry を出力できないアプリは完成扱いにしない。**
 後から遡って取得できない唯一のデータであり、外販根拠はこれしかない。

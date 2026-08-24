@@ -3,3 +3,5 @@ org/org-profile.*.json
 !org/org-profile.example.json
 .DS_Store
 node_modules/
+
+dist/
