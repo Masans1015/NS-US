@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0",
+  "org": {
+    "id": "sample",
+    "name": "サンプル・コンサルティング株式会社",
+    "industry": "コンサルティング",
+    "employee_count": 120,
+    "locale": "ja-JP",
+    "profile_owner": "（動作確認用の架空データ）",
+    "updated_at": "2026-08-25"
+  },
+
+  "policy": {
+    "data_classification": [
+      { "level": 1, "label": "極秘", "definition": "漏洩により事業継続に重大影響を及ぼすもの",
+        "examples": ["未公表のM&A情報", "未公表の決算数値"], "ai_input": "prohibited", "conditions": [], "allowed_tools": [] },
+      { "level": 2, "label": "顧客機密", "definition": "顧客から預託を受けた情報、NDA対象",
+        "examples": ["顧客の内部資料", "顧客名を含む議事録"], "ai_input": "conditional",
+        "conditions": ["顧客名・固有名詞を匿名化したうえで投入", "顧客との契約でAI利用が禁止されていないことを確認"],
+        "allowed_tools": ["Claude (Team)"] },
+      { "level": 3, "label": "社内限", "definition": "社外への開示を想定していない社内情報",
+        "examples": ["社内規程", "自社の工数実績"], "ai_input": "conditional",
+        "conditions": ["承認済みツールのみ"], "allowed_tools": ["Claude (Team)"] },
+      { "level": 4, "label": "公開可", "definition": "公開済み・公開予定の情報",
+        "examples": ["プレスリリース", "一般的な業界情報"], "ai_input": "allowed", "conditions": [], "allowed_tools": [] }
+    ],
+    "prohibited_inputs": [
+      { "label": "個人情報（氏名と他の識別子の組合せ）",
+        "detect_patterns": ["[0-9]{3}-[0-9]{4}-[0-9]{4}", "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"],
+        "rationale": "個人情報取扱規程による", "source_document": "個人情報取扱規程 第8条" },
+      { "label": "認証情報（APIキー・パスワード・トークン）",
+        "detect_patterns": ["sk-[A-Za-z0-9]{20,}", "(?i)password\\s*[:=]"],
+        "rationale": "認証情報の外部送信は事故に直結", "source_document": "情報セキュリティ規程 第14条" }
+    ],
+    "approved_tools": [
+      { "name": "Claude (Team)", "status": "approved", "max_data_level": 3,
+        "approved_uses": ["文書作成", "長文読解", "コード生成"],
+        "restrictions": ["顧客機密は匿名化後のみ"], "training_optout": true, "data_region": "US" }
+    ],
+    "human_approval_required": [
+      "顧客への外部送信を伴う成果物の確定",
+      "契約条件の判断・回答",
+      "不可逆な操作（削除・本番反映）"
+    ],
+    "disclosure_rules": {
+      "internal_required": false, "external_required": true,
+      "statement_template": "本資料の作成にあたり生成AIを補助的に使用し、内容は当社が確認しています。"
+    }
+  },
+
+  "delivery": {
+    "estimation_baseline": [
+      { "task_type": "現状業務ヒアリング", "unit": "1部門", "p50_hours": 14, "p80_hours": 22,
+        "source": "measured", "sample_n": 9, "updated_at": "2026-07-31" },
+      { "task_type": "As-Is業務プロセス整理", "unit": "1業務領域", "p50_hours": 28, "p80_hours": 44,
+        "source": "measured", "sample_n": 6, "updated_at": "2026-07-31" },
+      { "task_type": "課題の構造化・優先順位付け", "unit": "1業務領域", "p50_hours": 18, "p80_hours": 26,
+        "source": "historical_average", "sample_n": 11, "updated_at": "2026-06-30" },
+      { "task_type": "AI適用候補の実現性評価", "unit": "1候補", "p50_hours": 10, "p80_hours": 18,
+        "source": "measured", "sample_n": 4, "updated_at": "2026-07-31" },
+      { "task_type": "PoC計画策定", "unit": "1件", "p50_hours": 32, "p80_hours": 48,
+        "source": "historical_average", "sample_n": 7, "updated_at": "2026-06-30" },
+      { "task_type": "最終報告書作成", "unit": "1件（40〜60ページ）", "p50_hours": 36, "p80_hours": 52,
+        "source": "measured", "sample_n": 12, "updated_at": "2026-07-31" },
+      { "task_type": "中間報告資料作成", "unit": "1回", "p50_hours": 16, "p80_hours": 24,
+        "source": "measured", "sample_n": 10, "updated_at": "2026-07-31" }
+    ],
+    "role_capacity": [
+      { "role": "マネージャー", "daily_capacity_h": 5, "loaded_cost_per_day": 120000 },
+      { "role": "シニアコンサルタント", "daily_capacity_h": 6.5, "loaded_cost_per_day": 90000 },
+      { "role": "コンサルタント", "daily_capacity_h": 7, "loaded_cost_per_day": 65000 }
+    ],
+    "buffer_policy": {
+      "default_pct": 20,
+      "high_uncertainty_pct": 35,
+      "rationale": "当社実績では、顧客側の回答待ちが発生した案件で平均32%の超過が出ている。検証系タスクは前処理と例外処理で見積が過少になりやすい。"
+    },
+    "wbs_templates": [
+      { "template_id": "consulting_standard", "name": "構想策定標準（3〜4ヶ月）",
+        "phases": [
+          { "phase": "現状把握", "share_pct": 30, "tasks": ["キックオフ・スコープ合意", "関係部門ヒアリング", "現状値の実測"] },
+          { "phase": "分析・課題特定", "share_pct": 25, "tasks": ["プロセスの可視化", "ボトルネックの定量分析", "課題の構造化"] },
+          { "phase": "打ち手の設計", "share_pct": 25, "tasks": ["適用候補の洗い出し", "実現性評価", "効果試算"] },
+          { "phase": "計画策定", "share_pct": 10, "tasks": ["実行計画の策定", "体制案", "概算費用"] },
+          { "phase": "報告・引渡し", "share_pct": 10, "tasks": ["最終報告書作成", "報告会", "成果物引渡し"] }
+        ] }
+    ]
+  },
+
+  "document": {
+    "proposal_structure": [
+      { "section": "エグゼクティブサマリー", "purpose": "結論と示唆を先に置く", "required": true, "typical_slides": 1 },
+      { "section": "課題認識", "purpose": "顧客の言葉で現状を再定義する", "required": true, "typical_slides": 3 },
+      { "section": "打ち手", "purpose": "課題との対応を1対1で示す", "required": true, "typical_slides": 5 }
+    ],
+    "self_check_items": ["課題と打ち手が1対1で対応しているか", "数値に出典が付いているか"],
+    "tone": { "register": "です・ます", "banned_expressions": ["革新的な", "シームレスに"], "preferred_terms": [] },
+    "format_profile": "generic"
+  },
+
+  "brand": {
+    "fonts": [],
+    "colors": { "primary": "#0B4F6C", "text": "#1A1A1A", "table_header": "#0B4F6C", "rule": "#8A8886" },
+    "deck_skill": "",
+    "logo_path": ""
+  }
+}

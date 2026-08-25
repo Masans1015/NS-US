@@ -2,6 +2,7 @@ telemetry/*.jsonl
 org/org-profile.*.json
 !org/org-profile.example.json
 !org/org-profile.generic.json
+!org/org-profile.sample.json
 .DS_Store
 node_modules/
 

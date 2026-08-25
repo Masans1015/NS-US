@@ -17,6 +17,7 @@ const DOCS = [
   { file: 'docs/specs/A15-design.md',      label: 'A15 設計' },
   { file: 'docs/specs/A03-A04-logic.md',   label: 'A03・A04 判定' },
   { file: 'docs/specs/A15-status.md',      label: 'A15 実装状況' },
+  { file: 'docs/samples/A15-tryout.md',    label: 'A15 動作確認' },
 ];
 
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
