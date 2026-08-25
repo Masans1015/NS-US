@@ -1,28 +1,28 @@
 :root{
-  --ground:#F1F4F3; --surface:#FFFFFF; --surface-2:#E8EDEB; --surface-3:#DDE4E2;
-  --ink:#151F1D; --ink-2:#3F4F4C; --ink-3:#6B7B78;
-  --rule:#D2DAD8; --rule-strong:#B4BFBC;
-  --accent:#0E6B60; --accent-soft:#D6E6E3;
-  --warn:#9C5B15; --gate:#9B3446; --gate-soft:#F2DEE1;
+  --ground:#F4F7FA; --surface:#FFFFFF; --surface-2:#EDF2F7; --surface-3:#E1E9F2;
+  --ink:#0F1B2D; --ink-2:#3D4E63; --ink-3:#6E8098;
+  --rule:#DCE4EE; --rule-strong:#BFCCDC;
+  --accent:#1F3864; --accent-soft:#EAF0F8;
+  --warn:#8A5A11; --gate:#8C2434; --gate-soft:#F8E5E8;
   --display:"Zen Old Mincho",'Hiragino Mincho ProN','Yu Mincho',serif;
   --body:"Zen Kaku Gothic New",'Hiragino Sans','Yu Gothic',system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,'SFMono-Regular',monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --ground:#0E1413; --surface:#161F1D; --surface-2:#1E2927; --surface-3:#26332F;
-    --ink:#E3EAE8; --ink-2:#A9B8B5; --ink-3:#7B8A87;
-    --rule:#2A3634; --rule-strong:#3C4A47;
-    --accent:#4FC0AE; --accent-soft:#1B302D;
-    --warn:#D79A3E; --gate:#E38294; --gate-soft:#331E22;
+  --ground:#0B1220; --surface:#111A2A; --surface-2:#18233A; --surface-3:#20304C;
+  --ink:#E6EDF7; --ink-2:#A6B7CE; --ink-3:#73879F;
+  --rule:#22314C; --rule-strong:#33486D;
+  --accent:#7BA4E8; --accent-soft:#15233A;
+  --warn:#D9A441; --gate:#E4899A; --gate-soft:#2B1720;
   }
 }
 :root[data-theme="dark"]{
-  --ground:#0E1413; --surface:#161F1D; --surface-2:#1E2927; --surface-3:#26332F;
-  --ink:#E3EAE8; --ink-2:#A9B8B5; --ink-3:#7B8A87;
-  --rule:#2A3634; --rule-strong:#3C4A47;
-  --accent:#4FC0AE; --accent-soft:#1B302D;
-  --warn:#D79A3E; --gate:#E38294; --gate-soft:#331E22;
+  --ground:#0B1220; --surface:#111A2A; --surface-2:#18233A; --surface-3:#20304C;
+  --ink:#E6EDF7; --ink-2:#A6B7CE; --ink-3:#73879F;
+  --rule:#22314C; --rule-strong:#33486D;
+  --accent:#7BA4E8; --accent-soft:#15233A;
+  --warn:#D9A441; --gate:#E4899A; --gate-soft:#2B1720;
 }
 
 *{box-sizing:border-box}

@@ -75,9 +75,12 @@ function render(md, docIdx) {
       const rows = [];
       while (i < lines.length && lines[i].trim().startsWith('|')) rows.push(cells(lines[i++]));
       const num = c => (/^[\d.\-+%]+[h件回分%]?$/.test(c.replace(/\*\*/g, '')) ? ' class="num"' : '');
-      html += '<div class="scroller"><table><thead><tr>'
-        + head.map(h => `<th>${inline(h)}</th>`).join('')
-        + '</tr></thead><tbody>'
+      // 見出しが全部空の表（| | | 形式の対比表）は thead を出さない。
+      // 空の帯だけが描かれて不具合に見えるため。
+      const hasHead = head.some(h => h.trim());
+      html += '<div class="scroller"><table>'
+        + (hasHead ? '<thead><tr>' + head.map(h => `<th>${inline(h)}</th>`).join('') + '</tr></thead>' : '')
+        + '<tbody>'
         + rows.map(r => '<tr>' + r.map(c => `<td${num(c)}>${inline(c)}</td>`).join('') + '</tr>').join('')
         + '</tbody></table></div>';
       continue;

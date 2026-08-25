@@ -9,24 +9,65 @@
     "profile_owner": "—",
     "updated_at": "2026-08-24"
   },
-
   "policy": {
     "data_classification": [
-      { "level": 1, "label": "極秘", "definition": "漏洩により事業継続に重大影響を及ぼすもの",
-        "examples": [], "ai_input": "prohibited", "conditions": [], "allowed_tools": [] },
-      { "level": 2, "label": "取引先機密", "definition": "取引先から預託を受けた情報、NDA対象",
-        "examples": [], "ai_input": "conditional",
-        "conditions": ["固有名詞を匿名化したうえで投入", "契約でAI利用が禁止されていないことを確認"],
-        "allowed_tools": [] },
-      { "level": 3, "label": "社内限", "definition": "社外への開示を想定していない社内情報",
-        "examples": [], "ai_input": "conditional", "conditions": ["承認済みツールのみ"], "allowed_tools": [] },
-      { "level": 4, "label": "公開可", "definition": "公開済み・公開予定の情報",
-        "examples": [], "ai_input": "allowed", "conditions": [], "allowed_tools": [] }
+      {
+        "level": 1,
+        "label": "極秘",
+        "definition": "漏洩により事業継続に重大影響を及ぼすもの",
+        "examples": [],
+        "ai_input": "prohibited",
+        "conditions": [],
+        "allowed_tools": []
+      },
+      {
+        "level": 2,
+        "label": "取引先機密",
+        "definition": "取引先から預託を受けた情報、NDA対象",
+        "examples": [],
+        "ai_input": "conditional",
+        "conditions": [
+          "固有名詞を匿名化したうえで投入",
+          "契約でAI利用が禁止されていないことを確認"
+        ],
+        "allowed_tools": []
+      },
+      {
+        "level": 3,
+        "label": "社内限",
+        "definition": "社外への開示を想定していない社内情報",
+        "examples": [],
+        "ai_input": "conditional",
+        "conditions": [
+          "承認済みツールのみ"
+        ],
+        "allowed_tools": []
+      },
+      {
+        "level": 4,
+        "label": "公開可",
+        "definition": "公開済み・公開予定の情報",
+        "examples": [],
+        "ai_input": "allowed",
+        "conditions": [],
+        "allowed_tools": []
+      }
     ],
-
     "prohibited_inputs": [],
     "approved_tools": [],
     "human_approval_required": [],
-    "disclosure_rules": { "internal_required": false, "external_required": false, "statement_template": "" }
+    "disclosure_rules": {
+      "internal_required": false,
+      "external_required": false,
+      "statement_template": ""
+    }
+  },
+  "brand": {
+    "fonts": [],
+    "colors": {
+      "primary": "#1F3864"
+    },
+    "deck_skill": "",
+    "logo_path": ""
   }
 }
