@@ -9,6 +9,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const DOCS = [
+  { file: 'docs/apps.md',                  label: '作るもの' },
   { file: 'docs/plan.md',                  label: '実行計画' },
   { file: 'docs/decisions.md',             label: '決定記録' },
   { file: 'docs/baseline-measurement.md',  label: 'Before 実測' },
