@@ -130,8 +130,9 @@ node scripts/build-docs.mjs   # docs/*.md → docs/plan.html + dist/plan.artifac
 
 ## 作業する上での約束
 
-- **P1が埋まっていないアプリに着手しない。** 特に「現状値（Before）」が空のまま始めない。推定値で埋めると削減率が願望になる。
-  取り方は `docs/baseline-measurement.md`。**`source: "assumption"` のまま P4 に入らない**
+- **Before実測は P4 パイロットまでに埋める**（ADR-015で P2/P3 の前提条件から外した）。
+  取り方は `docs/baseline-measurement.md`。**`source: "assumption"` のまま P4 に入らない**。
+  埋める前に使った分は削減時間を集計できない（`baseline` 未記録は集計対象外）ので、**遅れた分だけ母数が減る**
 - **新しいアプリを思いついても、まず `docs/requirements.md` の見送りリストを見る。** 一度判断したものを蒸し返さない
 - **評価軸の判定方法は `deterministic` を最優先。** LLMに採点させるのは、機械判定が原理的に不可能な場合のみ
 - **一度決めた設計判断を蒸し返さない。** `docs/decisions.md` を見る。覆すときは新しい ADR を追加する（上書き削除しない）

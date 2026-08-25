@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "app_id": "A15",
+  "rubric_version": "0.1",
+  "updated_at": "2026-08-24",
+
+  "criteria": [
+    {
+      "id": "C1",
+      "name": "正確性",
+      "definition": "数値の内部整合。全タスクで p80 >= p50 が成立し、total.p50/p80 が各タスク合計にバッファを乗せた値と一致する（誤差1%以内）。share_pct の合計が100。",
+      "weight": 0.28,
+      "auto_checkable": true,
+      "check_method": "deterministic",
+      "levels": [
+        { "score": 4, "descriptor": "全項目が整合。誤差なし" },
+        { "score": 3, "descriptor": "合計の誤差が1%以内" },
+        { "score": 2, "descriptor": "合計の誤差が1%超5%以内、または share_pct 合計が100でない" },
+        { "score": 1, "descriptor": "p80 < p50 のタスクが1件ある" },
+        { "score": 0, "descriptor": "p80 < p50 のタスクが2件以上、または合計が算出できない" }
+      ]
+    },
+    {
+      "id": "C2",
+      "name": "網羅性",
+      "definition": "評価ケースの must_include（期待される工程名）の被覆数で判定する。加えて missing_inputs が1件以上あること。空配列は「欠落に気づいていない」とみなし1段減点する。",
+      "weight": 0.30,
+      "auto_checkable": true,
+      "check_method": "deterministic",
+      "levels": [
+        { "score": 4, "descriptor": "must_include を全件被覆し、missing_inputs が1件以上ある" },
+        { "score": 3, "descriptor": "被覆漏れ1件、または missing_inputs が空" },
+        { "score": 2, "descriptor": "被覆漏れ2件" },
+        { "score": 1, "descriptor": "被覆漏れ3〜4件" },
+        { "score": 0, "descriptor": "被覆漏れ5件以上" }
+      ]
+    },
+    {
+      "id": "C3",
+      "name": "構造の妥当性",
+      "definition": "フェーズが時系列に並び、各タスクが1つのフェーズにのみ属し、粒度が概ね4〜40時間に収まっているか。前提には外れたときの工数影響が、不確実性には減らす手段が付いているか。",
+      "weight": 0.187,
+      "auto_checkable": false,
+      "check_method": "llm_judge",
+      "levels": [
+        { "score": 4, "descriptor": "時系列・排他性・粒度すべて成立。前提と不確実性に付帯情報が全件ある" },
+        { "score": 3, "descriptor": "1点だけ崩れている（粒度外れが1〜2タスク等）" },
+        { "score": 2, "descriptor": "2点崩れている、または前提の工数影響が半数以上欠落" },
+        { "score": 1, "descriptor": "フェーズ順序が破綻、または同一タスクが複数フェーズに重複" },
+        { "score": 0, "descriptor": "構造として読めない" }
+      ]
+    },
+    {
+      "id": "C4",
+      "name": "実用性",
+      "definition": "出力をそのまま顧客提示前の下書きとして使えるか。採点者が実際に手直しに要する時間で判定する。",
+      "weight": 0.14,
+      "auto_checkable": false,
+      "check_method": "human",
+      "levels": [
+        { "score": 4, "descriptor": "手直し15分以内で使える" },
+        { "score": 3, "descriptor": "手直し30分以内" },
+        { "score": 2, "descriptor": "手直し1時間以内" },
+        { "score": 1, "descriptor": "骨子だけ流用、大半は書き直し" },
+        { "score": 0, "descriptor": "使えない" }
+      ]
+    },
+    {
+      "id": "C5",
+      "name": "安全性",
+      "definition": "全タスクに basis が付いていること、buffer_rationale が空でないこと、入力に無い固有名詞（組織名・個人名）を出力が捏造していないこと。3点すべてを満たして満点。",
+      "weight": 0.093,
+      "auto_checkable": true,
+      "check_method": "deterministic",
+      "levels": [
+        { "score": 4, "descriptor": "3点すべて満たす" },
+        { "score": 2, "descriptor": "basis 欠落または buffer_rationale が空" },
+        { "score": 0, "descriptor": "入力に無い固有名詞を捏造している" }
+      ]
+    }
+  ],
+
+  "go_threshold": {
+    "min_weighted_score": 3.0,
+    "min_per_criterion": 2,
+    "must_pass_criteria": ["C5"]
+  },
+
+  "consistency_test": {
+    "runs": 3,
+    "max_score_stddev": 0.5
+  },
+
+  "portability_check": {
+    "alternate_org_profile": "org/org-profile.generic.json",
+    "alternate_model": "claude-sonnet-5",
+    "max_score_drop": 0.5
+  }
+}

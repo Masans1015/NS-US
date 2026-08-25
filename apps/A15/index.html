@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A15 ワークプラン／工数見積キット</title>
+<!--
+  TierA: 単体HTML・ブラウザ内完結。ビルドツールなし。
+  localStorage / sessionStorage は使わない（状態はJS変数のみ）。
+  org-profile は埋め込まずファイル読込。
+  共通シェルは2本目のアプリで lib/ へ切り出す（ADR-011／今は最小限を同梱）。
+-->
+<style>
+:root{
+  --ground:#F1F4F3;--surface:#fff;--surface-2:#E8EDEB;--surface-3:#DDE4E2;
+  --ink:#151F1D;--ink-2:#3F4F4C;--ink-3:#6B7B78;
+  --rule:#D2DAD8;--rule-strong:#B4BFBC;
+  --accent:#0E6B60;--accent-soft:#D6E6E3;
+  --warn:#9C5B15;--warn-soft:#F5E9D8;
+  --stop:#9B3446;--stop-soft:#F2DEE1;
+  --ok:#2C6E49;--ok-soft:#DCEBE1;
+  --mono:ui-monospace,"SFMono-Regular","Consolas",monospace;
+  --sans:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0E1413;--surface:#161F1D;--surface-2:#1E2927;--surface-3:#26332F;
+  --ink:#E3EAE8;--ink-2:#A9B8B5;--ink-3:#7B8A87;
+  --rule:#2A3634;--rule-strong:#3C4A47;
+  --accent:#4FC0AE;--accent-soft:#1B302D;
+  --warn:#D79A3E;--warn-soft:#2F2717;
+  --stop:#E38294;--stop-soft:#331E22;
+  --ok:#6FBF8F;--ok-soft:#172A1F;
+}}
+:root[data-theme="dark"]{
+  --ground:#0E1413;--surface:#161F1D;--surface-2:#1E2927;--surface-3:#26332F;
+  --ink:#E3EAE8;--ink-2:#A9B8B5;--ink-3:#7B8A87;
+  --rule:#2A3634;--rule-strong:#3C4A47;
+  --accent:#4FC0AE;--accent-soft:#1B302D;
+  --warn:#D79A3E;--warn-soft:#2F2717;
+  --stop:#E38294;--stop-soft:#331E22;
+  --ok:#6FBF8F;--ok-soft:#172A1F;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;font-feature-settings:"palt" 1}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 18px 90px}
+h1{font-size:21px;margin:0;font-weight:700}
+h2{font-size:15px;margin:0 0 12px;font-weight:700;padding-bottom:7px;border-bottom:1px solid var(--rule)}
+h3{font-size:13px;margin:18px 0 7px;font-weight:700;color:var(--ink-2)}
+p{margin:0}
+code{font-family:var(--mono);font-size:.87em;background:var(--surface-2);padding:.1em .35em;border-radius:3px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+header{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:baseline;
+  padding-bottom:14px;border-bottom:2px solid var(--ink);margin-bottom:16px}
+.ver{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+button{font:inherit;font-size:13px;padding:7px 15px;border-radius:4px;cursor:pointer;
+  border:1px solid var(--rule-strong);background:var(--surface);color:var(--ink)}
+button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--ground);font-weight:700}
+button.primary:hover:not(:disabled){opacity:.88;color:var(--ground)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px}
+input,textarea,select{font:inherit;font-size:14px;width:100%;padding:8px 10px;border-radius:4px;
+  border:1px solid var(--rule-strong);background:var(--surface);color:var(--ink)}
+textarea{min-height:150px;resize:vertical;line-height:1.7}
+label{display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px}
+.req::after{content:" 必須";color:var(--stop);font-weight:700}
+
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:16px 18px;margin-bottom:14px}
+.row{display:grid;gap:12px}
+@media(min-width:800px){.cols2{grid-template-columns:1fr 1fr}.cols3{grid-template-columns:1fr 1fr 1fr}}
+
+/* 起動時検証 */
+#boot{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.st{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid;white-space:nowrap}
+.st.ok{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}
+.st.bad{border-color:var(--stop);color:var(--stop);background:var(--stop-soft)}
+.st.wait{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+
+/* データ区分表 */
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:420px}
+.scroller{overflow-x:auto;border:1px solid var(--rule);border-radius:4px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.6}
+thead th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);background:var(--surface-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ai-prohibited{color:var(--stop);font-weight:700}
+.ai-conditional{color:var(--warn);font-weight:700}
+.ai-allowed{color:var(--ok);font-weight:700}
+details{border:1px solid var(--rule);border-radius:4px;padding:9px 13px;background:var(--surface);margin-bottom:14px}
+summary{cursor:pointer;font-size:13px;font-weight:700}
+details[open] summary{margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid var(--rule)}
+details ul{margin:0;padding-left:19px;font-size:13.5px;color:var(--ink-2)}
+details li{margin-bottom:5px}
+
+.basis{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:2px;white-space:nowrap}
+.b-baseline{background:var(--ok-soft);color:var(--ok)}
+.b-template{background:var(--accent-soft);color:var(--accent)}
+.b-analogy,.b-judgment{background:var(--warn-soft);color:var(--warn)}
+.u-high{color:var(--stop);font-weight:700}.u-medium{color:var(--warn)}.u-low{color:var(--ink-3)}
+
+.total{display:flex;flex-wrap:wrap;gap:14px 30px;padding:13px 16px;background:var(--accent-soft);border-radius:4px;margin-top:12px}
+.total div{font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+.total b{display:block;font-size:22px;color:var(--ink);font-weight:600;margin-top:2px}
+ul.tight{list-style:none;margin:0;padding:0}
+ul.tight li{font-size:13.5px;padding-left:16px;position:relative;margin-bottom:6px;line-height:1.7;color:var(--ink-2)}
+ul.tight li::before{content:"";position:absolute;left:0;top:.7em;width:6px;height:1.5px;background:var(--accent)}
+ul.tight li b{color:var(--ink)}
+.msg{padding:12px 15px;border-radius:4px;margin-bottom:13px;font-size:13.5px}
+.msg.err{background:var(--stop-soft);border:1px solid var(--stop);color:var(--ink)}
+.msg.warn{background:var(--warn-soft);border:1px solid var(--warn);color:var(--ink)}
+.msg.ok{background:var(--ok-soft);border:1px solid var(--ok);color:var(--ink)}
+.msg > b:first-child{display:block;margin-bottom:3px}  /* 見出しの b だけ。文中の b は行内のまま */
+.hint{font-size:11.5px;color:var(--ink-3);margin-top:4px;line-height:1.6}
+.hidden{display:none!important}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid var(--accent);border-right-color:transparent;
+  border-radius:50%;animation:sp .7s linear infinite;vertical-align:-1px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:11px;color:var(--ink-3);line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>A15 ワークプラン／工数見積キット</h1>
+  <span class="ver mono" id="verline"></span>
+  <span style="margin-left:auto"><button id="theme" type="button">テーマ切替</button></span>
+</header>
+
+<div id="boot"></div>
+<div id="bootErr"></div>
+
+<!-- ── データ区分表（org-profile から生成。ハードコードしない） ── -->
+<section class="card">
+  <h2>データ区分 ─ このアプリに入れてよいもの</h2>
+  <div class="scroller"><table>
+    <thead><tr><th>区分</th><th>名称</th><th>AI投入</th><th>条件</th></tr></thead>
+    <tbody id="dcTable"><tr><td colspan="4" style="color:var(--ink-3)">org-profile を読み込むと表示されます</td></tr></tbody>
+  </table></div>
+  <p class="hint" id="dcNote"></p>
+</section>
+
+<details>
+  <summary>利用手引き</summary>
+  <ul>
+    <li>案件概要を貼って「見積を作る」を押すと、WBS・工数レンジ・前提・不確実性・不足情報が出ます。</li>
+    <li><b>出力は判断材料であって決裁ではありません。</b>顧客提示前に必ず数値をご自身で確認してください（HITL）。</li>
+    <li>組織の工数実績（<code>delivery.estimation_baseline</code>）が未設定の間は、各タスクの出どころが「判断」「類推」中心になります。<b>精度が低いことが出力に現れる</b>のが正しい状態です。</li>
+    <li>APIキーはこのタブのJS変数にのみ保持し、保存も送信もしません（リロードで消えます）。</li>
+    <li>利用のたびに下部の<b>実測の記録</b>を必ず入力してください。<b>これを出力できない利用は完成扱いになりません。</b></li>
+  </ul>
+</details>
+
+<!-- ── 設定 ── -->
+<section class="card">
+  <h2>設定</h2>
+  <div class="row cols2">
+    <div>
+      <label for="profile">org-profile（ファイル読込。埋め込みません）</label>
+      <input type="file" id="profile" accept=".json,application/json">
+      <p class="hint" id="profHint">未読込。<code>org/org-profile.generic.json</code> でも動きます。</p>
+    </div>
+    <div>
+      <label for="apikey">Anthropic API キー（このタブのみ保持）</label>
+      <input type="password" id="apikey" placeholder="sk-ant-..." autocomplete="off">
+      <p class="hint">キーが無い場合、見積の生成はできません。区分表と手引きは動きます。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 入力 ── -->
+<section class="card">
+  <h2>案件概要を入れる</h2>
+  <label for="brief">案件概要 ─ スコープ・期間・体制・制約。<b>揃っていなくて構いません</b>（不足は指摘されます）</label>
+  <textarea id="brief" placeholder="例）製造業（従業員800名）向け、生産管理領域のAI活用構想策定。期間3ヶ月。
+現状ヒアリング → 課題整理 → AI適用候補の洗い出し → ロードマップ策定まで。
+体制はマネージャー1名＋コンサル2名を想定。"></textarea>
+  <div class="row cols3" style="margin-top:12px">
+    <div><label for="taskType">作業種別（telemetry用）</label>
+      <input id="taskType" value="工数見積"></div>
+    <div><label for="scope">規模（telemetry用）</label>
+      <input id="scope" placeholder="例: 3ヶ月・3名"></div>
+    <div><label for="complexity">複雑さ</label>
+      <select id="complexity"><option value="low">low</option><option value="medium" selected>medium</option><option value="high">high</option></select></div>
+  </div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <button class="primary" id="run" type="button">見積を作る</button>
+    <button id="skip" type="button">今回は使わなかった</button>
+    <span class="hint" id="runHint"></span>
+  </div>
+  <p class="hint">「今回は使わなかった」も1件記録します。<b>使わなかった機会を残さないと、継続利用率の分母が消えます</b>（ADR-004）。</p>
+</section>
+
+<div id="err"></div>
+
+<!-- ── 出力 ── -->
+<section class="card hidden" id="out">
+  <h2>見積</h2>
+  <div class="scroller"><table>
+    <thead><tr><th>フェーズ</th><th>タスク</th><th>p50</th><th>p80</th><th>不確実性</th><th>出どころ</th></tr></thead>
+    <tbody id="wbs"></tbody>
+  </table></div>
+  <div class="total" id="total"></div>
+  <div id="bufWhy"></div>
+  <h3>前提 ─ 外れたときの影響つき</h3><ul class="tight" id="assump"></ul>
+  <h3>不確実性の所在 ─ 減らす手段つき</h3><ul class="tight" id="uncert"></ul>
+  <h3>不足している入力</h3><ul class="tight" id="missing"></ul>
+  <div id="selfcheck"></div>
+</section>
+
+<!-- ── telemetry ── -->
+<section class="card hidden" id="tele">
+  <h2>実測の記録 ─ これを出さないと完成扱いにしません</h2>
+  <div class="row cols3">
+    <div><label for="actual" class="req">アプリ利用の実時間（分）</label>
+      <input type="number" id="actual" min="0" step="1" placeholder="待ち時間も含める"></div>
+    <div><label for="fix" class="req">出力後の手直し時間（分）</label>
+      <input type="number" id="fix" min="0" step="1" placeholder="0 なら 0 と入力">
+      <p class="hint">計上しないと削減率が2倍近く過大に出ます。0 は「0」と明示入力してください</p></div>
+    <div><label for="rounds">やり直し回数</label>
+      <input type="number" id="rounds" min="0" step="1" value="1"></div>
+  </div>
+  <div class="row cols3" style="margin-top:12px">
+    <div><label for="baseMin">AIなしなら何分かかったか</label>
+      <input type="number" id="baseMin" min="0" step="1" placeholder="未測定なら空欄"></div>
+    <div><label for="baseMethod">その根拠</label>
+      <select id="baseMethod">
+        <option value="">（未記録）</option>
+        <option value="measured">measured 計った</option>
+        <option value="historical_average">historical_average 過去記録から</option>
+        <option value="self_report">self_report 記憶で</option>
+        <option value="assumption">assumption 置いた値</option>
+      </select>
+      <p class="hint">assumption と未記録は削減時間の集計から除外されます（ADR-015）</p></div>
+    <div><label for="selfScore">出来ばえ（1-5）</label>
+      <select id="selfScore"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+  </div>
+  <div style="margin-top:12px">
+    <label class="req">事例として外部に出してよいか（あとから取り直せません）</label>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13.5px;margin-top:2px">
+      <label style="display:inline-flex;gap:6px;align-items:center;color:var(--ink)">
+        <input type="radio" name="consent" value="anon" style="width:auto"> 匿名化すれば可</label>
+      <label style="display:inline-flex;gap:6px;align-items:center;color:var(--ink)">
+        <input type="radio" name="consent" value="named" style="width:auto"> 実名でも可</label>
+      <label style="display:inline-flex;gap:6px;align-items:center;color:var(--ink)">
+        <input type="radio" name="consent" value="no" style="width:auto"> 社内分析のみ</label>
+    </div>
+  </div>
+  <div style="margin-top:12px">
+    <label for="note">使ってみて（不満・使わなかった理由など）</label>
+    <input id="note" placeholder="ここが空のログばかりなら運用が形骸化しています">
+  </div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <button class="primary" id="rec" type="button">この利用を記録する</button>
+    <button id="exp" type="button" disabled>JSON Lines で書き出す（<span id="cnt">0</span>件）</button>
+  </div>
+  <div id="teleMsg"></div>
+</section>
+
+<footer>
+  A15 / core: A15.system.md / telemetry schema 1.1 / model: claude-opus-5<br>
+  TierA 単体HTML ─ 入力は Anthropic API 以外へ送信しません。localStorage 不使用（リロードで記録は消えます）
+</footer>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   定数（ADR-006 の呼び出し規約。ここ以外にモデル名を書かない）
+   ============================================================ */
+const MODEL = { PRIMARY: "claude-opus-5", ALT: "claude-sonnet-5" };
+const APP_ID = "A15";
+const APP_VERSION = "0.1.0";
+const CORE_SCHEMA_VERSION = "1.0";      // core / org-profile の期待値
+const TELEMETRY_SCHEMA_VERSION = "1.1"; // ADR-012
+
+/* 状態は JS 変数のみ。localStorage / sessionStorage は使わない */
+const state = { profile: null, apiKey: "", result: null, startedAt: null, records: [] };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const num = v => (v === "" || v === null || v === undefined || isNaN(Number(v))) ? undefined : Number(v);
+
+/* ============================================================
+   起動時検証（DoD 8項）
+   ============================================================ */
+const boot = { core: false, profile: false };
+function renderBoot(){
+  const chips = [
+    `<span class="st ${boot.core?"ok":"bad"}">core schema ${CORE_SCHEMA_VERSION} ${boot.core?"✓":"✗"}</span>`,
+    `<span class="st ${boot.profile?"ok":"wait"}">org-profile ${boot.profile?esc(state.profile.org.id)+" ✓":"未読込"}</span>`,
+    `<span class="st ${state.apiKey?"ok":"wait"}">API キー ${state.apiKey?"✓":"未設定"}</span>`,
+    `<span class="st ok">telemetry ${TELEMETRY_SCHEMA_VERSION}</span>`,
+  ];
+  $("boot").innerHTML = chips.join("");
+  $("verline").textContent = `v${APP_VERSION} / ${MODEL.PRIMARY}`;
+  $("run").disabled = !(boot.core && boot.profile && state.apiKey);
+  $("runHint").textContent = $("run").disabled
+    ? "org-profile と API キーを設定すると押せます" : "";
+}
+boot.core = (CORE_SCHEMA_VERSION === "1.0");
+
+/* ============================================================
+   org-profile ローダ（埋め込まない。schema_version 不一致なら停止）
+   ============================================================ */
+$("profile").addEventListener("change", async e => {
+  const f = e.target.files?.[0]; if(!f) return;
+  $("bootErr").innerHTML = "";
+  try{
+    const text = await f.text();
+    let p; try{ p = JSON.parse(text); }
+    catch(pe){ throw new Error(`JSON として読めません: ${pe.message}`); }
+
+    for(const k of ["schema_version","org","policy"])
+      if(!(k in p)) throw new Error(`必須キー "${k}" がありません`);
+    if(p.schema_version !== CORE_SCHEMA_VERSION)
+      throw new Error(`schema_version 不一致で停止しました。期待 ${CORE_SCHEMA_VERSION} / 実際 ${p.schema_version}。`
+        + " 不一致のまま動かすと、原因の分からない品質低下として現れます。");
+    if(!Array.isArray(p.policy.data_classification) || !p.policy.data_classification.length)
+      throw new Error("policy.data_classification が空です");
+
+    state.profile = p; boot.profile = true;
+    renderClassification(p); renderProfHint(p); renderBoot();
+  }catch(err){
+    state.profile = null; boot.profile = false; renderBoot();
+    $("bootErr").innerHTML = `<div class="msg err"><b>org-profile を読み込めませんでした</b>${esc(err.message)}</div>`;
+  }
+});
+
+function renderClassification(p){
+  $("dcTable").innerHTML = p.policy.data_classification
+    .slice().sort((a,b)=>a.level-b.level)
+    .map(c=>`<tr>
+      <td class="n">${esc(c.level)}</td>
+      <td>${esc(c.label)}<div class="hint">${esc(c.definition||"")}</div></td>
+      <td class="ai-${esc(c.ai_input)}">${c.ai_input==="prohibited"?"不可":c.ai_input==="conditional"?"条件付き":"可"}</td>
+      <td>${(c.conditions||[]).length?`<ul class="tight">${c.conditions.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:"—"}</td>
+    </tr>`).join("");
+  const cap = p.policy.data_classification.filter(c=>c.ai_input!=="prohibited").map(c=>c.level);
+  $("dcNote").innerHTML = `このアプリの<b>データ区分の上限は 3（社内限）</b>です。`
+    + ` 区分 ${cap.length?Math.min(...cap):"—"} より機微な情報は入れないでください。`;
+}
+function renderProfHint(p){
+  const eb = p.delivery?.estimation_baseline ?? [];
+  const measured = eb.filter(x => x.source === "measured" || x.source === "historical_average");
+  $("profHint").innerHTML = `<b>${esc(p.org.name)}</b>（${esc(p.org.id)}）を読み込みました。`
+    + (measured.length
+      ? ` 工数実績 ${measured.length} 件を見積に使います。`
+      : ` <span style="color:var(--warn)">工数実績が未設定のため汎用レンジで出します。出どころは「判断」「類推」中心になります。</span>`);
+}
+
+$("apikey").addEventListener("input", e => { state.apiKey = e.target.value.trim(); renderBoot(); });
+$("theme").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const sysDark = matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", cur ? (cur==="dark"?"light":"dark") : (sysDark?"light":"dark"));
+});
+
+/* ============================================================
+   出力契約（ADR-006: 構造化出力。prefill は 400 になるので使わない）
+   ============================================================ */
+const OUTPUT_SCHEMA = {
+  type:"object", additionalProperties:false,
+  required:["wbs","total","assumptions","uncertainty_sources","missing_inputs"],
+  properties:{
+    wbs:{type:"array",items:{type:"object",additionalProperties:false,
+      required:["phase","share_pct","tasks"],
+      properties:{
+        phase:{type:"string"}, share_pct:{type:"number"},
+        tasks:{type:"array",items:{type:"object",additionalProperties:false,
+          required:["task","p50_hours","p80_hours","uncertainty","basis"],
+          properties:{
+            task:{type:"string"}, p50_hours:{type:"number"}, p80_hours:{type:"number"},
+            uncertainty:{type:"string",enum:["low","medium","high"]},
+            basis:{type:"string",enum:["baseline","template","analogy","judgment"]}
+          }}}
+      }}},
+    total:{type:"object",additionalProperties:false,
+      required:["p50_hours","p80_hours","buffer_pct","buffer_rationale"],
+      properties:{p50_hours:{type:"number"},p80_hours:{type:"number"},
+        buffer_pct:{type:"number"},buffer_rationale:{type:"string"}}},
+    assumptions:{type:"array",items:{type:"object",additionalProperties:false,
+      required:["assumption","impact_if_wrong"],
+      properties:{assumption:{type:"string"},impact_if_wrong:{type:"string"}}}},
+    uncertainty_sources:{type:"array",items:{type:"object",additionalProperties:false,
+      required:["where","why","how_to_reduce"],
+      properties:{where:{type:"string"},why:{type:"string"},how_to_reduce:{type:"string"}}}},
+    missing_inputs:{type:"array",items:{type:"string"}}
+  }
+};
+
+/* core の判断ロジック。会社固有は一切書かず org から差し込む */
+const CORE_SYSTEM = `あなたは案件の作業分解と工数見積を行う。見積の数字そのものより、数字の根拠と不確かさの所在を示すことが仕事である。
+
+# 手順
+1. 作業を分解する。組織のWBSテンプレートがあればそれに従い、無ければ汎用型（要件定義→設計→実装・試作→検証→報告・引渡し）で分解する。粒度は1タスク4〜40時間。分解の抜けは成果物を作る作業ではなく周辺（引き継ぎ・情報収集、合意形成・レビュー・差し戻し、環境準備、データ入手と整形、報告資料の作成）で最も出やすいので必ず確認する。
+2. 各タスクに p50/p80 と basis を付ける。basis は baseline（組織の実績を使った）/ template（テンプレの配分から算出）/ analogy（類推。何に似せたかを assumptions に書く）/ judgment（判断で置いた）のいずれか。省略不可。p80 >= p50。不確実性が高いタスクほど開きを大きくする。組織の実績が空なら judgment と analogy が中心になる。それを隠して精度が高いように見せてはならない。
+3. バッファを算定する。組織の方針があればその率を使う。無ければ既定15%／高不確実性30%とし、方針が未設定のため汎用値を用いた旨を buffer_rationale に明記する。高不確実性の条件は、judgment のタスクが全工数の3割超／組織にとって未経験の領域を含む／外部要因の待ちに依存するタスクがある、のいずれか。buffer_rationale には、どのタスクの何が読めないからその率にしたのかを書く。「念のため」「一般的に」は根拠にならない。
+4. 前提を洗い出し、それぞれに外れたときの工数影響を付ける。影響が書けない前提は落とす。
+5. 不確実性の所在を、どこが・なぜ・どう減らすか の3点で示す。
+6. missing_inputs を必ず1件以上挙げる。空配列で返してはならない。見落としやすいのは、予算の上限、意思決定者と決裁の経路、既存の類似取り組み、利用できるデータの所在と品質、関係部門の数、時期的制約。
+
+# 守ること
+- 数字を丸めて自信があるように見せない。レンジで示し根拠を添える。
+- 根拠のない圧縮をしない。短縮したい場合はどの前提を確定させれば縮むのかを示す。
+- 組織のプロファイルに無い作業種別について、実績があるかのように書かない。
+- 入力に無い固有名詞（組織名・個人名）を作り出さない。
+- すべて日本語で出力する。`;
+
+function orgBlock(p){
+  const d = p.delivery ?? {};
+  const j = (label, v, empty) =>
+    `## ${label}\n` + (v && (Array.isArray(v) ? v.length : Object.keys(v).length)
+      ? "```json\n"+JSON.stringify(v,null,1)+"\n```" : empty);
+  return [
+    "# 組織固有の値",
+    j("作業種別ごとの実績工数", d.estimation_baseline,
+      "未設定。汎用レンジで出し、basis は baseline を使わないこと。"),
+    j("WBSテンプレート", d.wbs_templates,
+      "未設定。汎用のフェーズ型で分解すること。"),
+    j("バッファ方針", d.buffer_policy,
+      "未設定。既定15%／高不確実性30%を用い、方針が未設定である旨を buffer_rationale に明記すること。"),
+    j("ロール別キャパシティ", d.role_capacity,
+      "未設定。人日換算せず工数（h）のみで出すこと。"),
+  ].join("\n\n");
+}
+
+/* ============================================================
+   LLM 呼び出し（ADR-006）
+   ============================================================ */
+async function callLLM(brief){
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "x-api-key": state.apiKey,
+      "anthropic-version":"2023-06-01",
+      // ブラウザから直接呼ぶための宣言。W3 に実キーで要検証（docs/plan.md §7）
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
+    body: JSON.stringify({
+      model: MODEL.PRIMARY,
+      max_tokens: 16000,
+      thinking: { type: "adaptive" },              // budget_tokens は 400 になる
+      output_config: {
+        effort: "high",
+        format: { type: "json_schema", schema: OUTPUT_SCHEMA }
+      },
+      system: [
+        { type:"text", text: CORE_SYSTEM, cache_control:{type:"ephemeral"} },
+        { type:"text", text: orgBlock(state.profile) }
+      ],
+      messages: [{ role:"user", content: `# 案件概要\n\n${brief}` }]
+    })
+  });
+
+  if(!res.ok){
+    let detail = "";
+    try{ const e = await res.json(); detail = e.error?.message || JSON.stringify(e); }
+    catch{ detail = await res.text().catch(()=> ""); }
+    throw new Error(`API エラー ${res.status}: ${detail}`);
+  }
+  const data = await res.json();
+
+  // stop_reason を content より先に見る。逆にすると空結果を正常な出力として扱ってしまう
+  if(data.stop_reason === "refusal")
+    throw new Error("安全性の判定により応答が拒否されました（stop_reason: refusal）"
+      + (data.stop_details?.category ? ` / 分類: ${data.stop_details.category}` : "")
+      + "。入力を見直してください。空の結果を正常な見積として扱わないため中断します。");
+  if(data.stop_reason === "max_tokens")
+    throw new Error("出力が上限に達して途中で切れました。案件概要を短くして再実行してください。");
+
+  const text = (data.content ?? []).filter(b => b.type === "text").map(b => b.text).join("");
+  if(!text.trim()) throw new Error("応答が空でした。再実行してください。");
+  try{ return JSON.parse(text); }
+  catch(e){ throw new Error(`構造化出力を JSON として解釈できませんでした: ${e.message}`); }
+}
+
+/* ============================================================
+   実行
+   ============================================================ */
+$("run").addEventListener("click", async () => {
+  const brief = $("brief").value.trim();
+  $("err").innerHTML = "";
+  if(!brief){ $("err").innerHTML = `<div class="msg warn">案件概要を入力してください。</div>`; return; }
+
+  const btn = $("run"); btn.disabled = true;
+  const label = btn.textContent; btn.innerHTML = `<span class="spin"></span>生成中…`;
+  state.startedAt = Date.now();
+  try{
+    state.result = await callLLM(brief);
+    renderResult(state.result);
+    $("out").classList.remove("hidden"); $("tele").classList.remove("hidden");
+    const mins = Math.max(1, Math.round((Date.now()-state.startedAt)/60000));
+    if(!$("actual").value) $("actual").value = mins;
+    $("out").scrollIntoView({behavior:"smooth", block:"start"});
+  }catch(err){
+    $("err").innerHTML = `<div class="msg err"><b>生成できませんでした</b>${esc(err.message)}</div>`;
+  }finally{ btn.disabled = false; btn.textContent = label; renderBoot(); }
+});
+
+function renderResult(r){
+  const UL = {low:"低",medium:"中",high:"高"};
+  const BL = {baseline:"実績",template:"テンプレ",analogy:"類推",judgment:"判断"};
+  $("wbs").innerHTML = r.wbs.map(ph => ph.tasks.map((t,i) => `<tr>
+      ${i===0?`<td rowspan="${ph.tasks.length}"><b>${esc(ph.phase)}</b><div class="hint mono">${esc(ph.share_pct)}%</div></td>`:""}
+      <td>${esc(t.task)}</td>
+      <td class="n">${esc(t.p50_hours)}h</td>
+      <td class="n">${esc(t.p80_hours)}h</td>
+      <td class="u-${esc(t.uncertainty)}">${UL[t.uncertainty]??esc(t.uncertainty)}</td>
+      <td><span class="basis b-${esc(t.basis)}">${BL[t.basis]??esc(t.basis)}</span></td>
+    </tr>`).join("")).join("");
+
+  $("total").innerHTML = `<div>合計 p50<b>${esc(r.total.p50_hours)}h</b></div>`
+    + `<div>合計 p80<b>${esc(r.total.p80_hours)}h</b></div>`
+    + `<div>バッファ<b>${esc(r.total.buffer_pct)}%</b></div>`;
+  $("bufWhy").innerHTML = `<h3>バッファの根拠</h3><ul class="tight"><li>${esc(r.total.buffer_rationale)}</li></ul>`;
+  $("assump").innerHTML = r.assumptions.map(a =>
+    `<li>${esc(a.assumption)} → <b>${esc(a.impact_if_wrong)}</b></li>`).join("") || `<li>—</li>`;
+  $("uncert").innerHTML = r.uncertainty_sources.map(u =>
+    `<li><b>${esc(u.where)}</b> ${esc(u.why)}<div class="hint">減らす手段: ${esc(u.how_to_reduce)}</div></li>`).join("") || `<li>—</li>`;
+  $("missing").innerHTML = r.missing_inputs.map(m => `<li>${esc(m)}</li>`).join("") || `<li>—</li>`;
+
+  renderSelfCheck(r);
+}
+
+/* rubric の C1 / C5 は機械判定できる（core/A15.rubric.json）。その場で出す */
+function renderSelfCheck(r){
+  const tasks = r.wbs.flatMap(p => p.tasks);
+  const sum50 = tasks.reduce((a,t)=>a+t.p50_hours,0);
+  const sum80 = tasks.reduce((a,t)=>a+t.p80_hours,0);
+  const exp50 = sum50 * (1 + (r.total.buffer_pct||0)/100);
+  const off = exp50 ? Math.abs(r.total.p50_hours - exp50)/exp50*100 : 0;
+  const share = r.wbs.reduce((a,p)=>a+(p.share_pct||0),0);
+
+  const checks = [
+    ["全タスクで p80 ≧ p50", tasks.every(t=>t.p80_hours>=t.p50_hours)],
+    [`合計 p50 がタスク合計＋バッファと整合（誤差 ${off.toFixed(1)}%）`, off<=1],
+    [`share_pct の合計が100（実際 ${share}）`, Math.abs(share-100)<0.5],
+    ["全タスクに出どころが付いている", tasks.every(t=>t.basis)],
+    ["バッファの根拠が書かれている", !!(r.total.buffer_rationale||"").trim()],
+    ["不足情報が1件以上ある", (r.missing_inputs||[]).length>0],
+  ];
+  const ng = checks.filter(c=>!c[1]);
+  const jr = tasks.filter(t=>t.basis==="judgment"||t.basis==="analogy");
+  const jShare = sum50 ? Math.round(jr.reduce((a,t)=>a+t.p50_hours,0)/sum50*100) : 0;
+
+  $("selfcheck").innerHTML =
+    `<h3>自己検品（rubric C1・C5 の機械判定）</h3>`
+    + `<div class="msg ${ng.length?"warn":"ok"}"><b>${ng.length?`${ng.length}件が未達`:"すべて満たしています"}</b>`
+    + checks.map(c=>`${c[1]?"✓":"⚠"} ${esc(c[0])}`).join("<br>")
+    + `</div>`
+    + `<div class="msg ${jShare>30?"warn":"ok"}"><b>出どころの内訳</b>`
+    + `判断・類推が全工数の <b>${jShare}%</b>。`
+    + (jShare>30
+        ? " 3割を超えています。組織の工数実績（<code>delivery.estimation_baseline</code>）を埋めるほどこの比率は下がります。"
+        : " 実績に基づく比率が高い状態です。")
+    + `</div>`;
+}
+
+/* ============================================================
+   telemetry（schema 1.1）
+   ============================================================ */
+function baseBlock(){
+  const m = num($("baseMin").value), meth = $("baseMethod").value;
+  if(m === undefined && !meth) return undefined;
+  if(m !== undefined && !meth) throw new Error("AIなしの所要時間を入れた場合、その根拠も選んでください。");
+  const b = { method: meth };
+  if(m !== undefined) b.minutes = m;
+  return b;
+}
+function consentBlock(){
+  const v = document.querySelector('input[name="consent"]:checked')?.value;
+  if(!v) return null;
+  return { internal_analysis:true,
+    external_citation_anonymized: v==="anon"||v==="named",
+    external_citation_named: v==="named" };
+}
+function pushRecord(rec){
+  state.records.push(rec);
+  $("cnt").textContent = state.records.length;
+  $("exp").disabled = false;
+}
+
+$("rec").addEventListener("click", () => {
+  $("teleMsg").innerHTML = "";
+  try{
+    const actual = num($("actual").value), fix = num($("fix").value);
+    // 省略不可（DoD／externalization-kit の「後付けが効かない2項目」）
+    if(actual === undefined) throw new Error("アプリ利用の実時間は省略できません。");
+    if(fix === undefined) throw new Error("出力後の手直し時間は省略できません。0 のときは 0 と入力してください。計上しないと削減率が2倍近く過大に出ます。");
+    const consent = consentBlock();
+    if(!consent) throw new Error("事例利用の可否は省略できません。あとから同意を取り直せないためです。");
+
+    const rec = {
+      schema_version: TELEMETRY_SCHEMA_VERSION,
+      record_id: (crypto.randomUUID ? crypto.randomUUID()
+        : "r-"+Math.random().toString(16).slice(2)+"-"+state.records.length),
+      app_id: APP_ID, app_version: APP_VERSION,
+      org_id: state.profile?.org?.id,
+      recorded_at: new Date().toISOString(),
+      task: { type: $("taskType").value || "工数見積", used: true,
+        scope_size: $("scope").value || undefined, complexity: $("complexity").value },
+      actual: { minutes: actual, manual_fix_minutes: fix, interaction_rounds: num($("rounds").value) },
+      quality: { self_score: num($("selfScore").value) },
+      consent,
+      free_note: $("note").value || undefined
+    };
+    const b = baseBlock(); if(b) rec.baseline = b;
+    if(rec.quality.self_score === undefined) delete rec.quality;
+
+    pushRecord(rec);
+    const noBase = !rec.baseline || rec.baseline.method === "assumption";
+    $("teleMsg").innerHTML = `<div class="msg ${noBase?"warn":"ok"}"><b>記録しました（${state.records.length}件）</b>`
+      + (noBase
+        ? "AIなしの所要時間が未記録（または assumption）のため、<b>この利用は削減時間の集計対象外</b>です。W6 までに実測すると以降の記録が全件対象になります（ADR-015）。"
+        : "削減時間の集計対象です。")
+      + "<br>ページを閉じると消えます。<b>書き出しを忘れずに。</b></div>";
+  }catch(e){
+    $("teleMsg").innerHTML = `<div class="msg err"><b>記録できませんでした</b>${esc(e.message)}</div>`;
+  }
+});
+
+$("skip").addEventListener("click", () => {
+  const why = prompt("使わなかった理由を入力してください（必須）。\n記録しないと継続利用率の分母が消えます。");
+  if(why === null) return;
+  if(!why.trim()){ alert("理由が空の未利用記録は分母を汚すだけなので、記録しません。"); return; }
+  pushRecord({
+    schema_version: TELEMETRY_SCHEMA_VERSION,
+    record_id: (crypto.randomUUID ? crypto.randomUUID() : "s-"+Math.random().toString(16).slice(2)),
+    app_id: APP_ID, app_version: APP_VERSION, org_id: state.profile?.org?.id,
+    recorded_at: new Date().toISOString(),
+    task: { type: $("taskType").value || "工数見積", used: false },
+    actual: { minutes: 0 },
+    free_note: why.trim()
+  });
+  $("tele").classList.remove("hidden");
+  $("teleMsg").innerHTML = `<div class="msg ok"><b>未利用の機会として記録しました（${state.records.length}件）</b>`
+    + `継続利用率（G1）の分母に入ります。</div>`;
+});
+
+$("exp").addEventListener("click", () => {
+  if(!state.records.length) return;
+  const d = new Date(), ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+  const body = state.records.map(r => JSON.stringify(r)).join("\n") + "\n";
+  const url = URL.createObjectURL(new Blob([body], {type:"application/x-ndjson"}));
+  const a = document.createElement("a");
+  a.href = url; a.download = `${APP_ID}.${ym}.jsonl`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+});
+
+renderBoot();
+</script>
+</body>
+</html>
